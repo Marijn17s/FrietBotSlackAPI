@@ -1,0 +1,82 @@
+## Rider / IntelliJ ##
+.idea/
+*.iml
+*.ipr
+*.iws
+*.DotSettings
+
+## Visual Studio ##
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+*.dbmdl
+*.jfm
+*.pfx
+*.publishsettings
+
+## Build Artifacts ##
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+**/[Pp]ublish/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## .NET Core ##
+**/Properties/launchSettings.json
+*.csproj.user
+global.json.user
+appsettings.local.json
+
+## MSTest Results ##
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResults/
+nunit-*.xml
+
+## User-specific files ##
+*.DotSettings.user
+*.rsuser
+
+## Operating System Files ##
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.directory
+
+## Local configuration files (if any) ##
+# appsettings.Development.json
+
+## Log Files ##
+logs/
+*.log
+npm-debug.log*
+
+## Temp Files ##
+*.tmp
+*.bak
+*.swp
+*~
+._*
+
+## Cache files ##
+.rts*
+*.ide/
+
+## Packages ##
+# Exclude packages folder if used (e.g., for older projects)
+# packages/
+
+## Cache files ##
+# Add any specific cache directories here 
