@@ -1,4 +1,3 @@
-using System;
 using FrietBot.Config;
 using Serilog;
 

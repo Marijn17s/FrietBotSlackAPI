@@ -1,4 +1,5 @@
 using FrietBot;
+using FrietBot.Config;
 using FrietBot.Handlers;
 using FrietBot.Jobs;
 using FrietBot.Models;

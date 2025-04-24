@@ -3,7 +3,6 @@ using SlackNet.Events;
 using SlackNet.WebApi;
 using FrietBot.Services;
 using Serilog;
-using FrietBot.Models;
 
 namespace FrietBot.Handlers;
 
@@ -36,7 +35,7 @@ public class QuantityHandler : IEventHandler<MessageEvent>
             }
 
             // Find the current item
-            var currentItem = order.Items.FirstOrDefault(i => i.Type + "_" + i.Name == order.CurrentItemId);
+            var currentItem = order.Items.FirstOrDefault(i => i.Type + "_" + i.Id == order.CurrentItemId);
             if (currentItem == null)
             {
                 Log.Warning("Current item {CurrentItemId} not found in order {OrderId}", order.CurrentItemId, order.OrderId);
@@ -79,9 +78,12 @@ public class QuantityHandler : IEventHandler<MessageEvent>
                     var nextItem = order.Items.FirstOrDefault(i => i.NeedsQuantity);
                     if (nextItem != null)
                     {
-                        order.CurrentItemId = nextItem.Type + "_" + nextItem.Name;
+                        order.CurrentItemId = nextItem.Type + "_" + nextItem.Id;
                         Log.Information("Moving to next item {ItemName} in order {OrderId}", 
                             nextItem.Name, order.OrderId);
+                        
+                        // Save the updated order to Redis
+                        await _redisService.SaveOrderAsync(order);
                         
                         await _slack.Chat.PostMessage(new Message
                         {
@@ -97,18 +99,15 @@ public class QuantityHandler : IEventHandler<MessageEvent>
                         Log.Information("Order {OrderId} completed with items: {Items}", 
                             order.OrderId, string.Join(", ", order.Items.Select(i => $"{i.Quantity}x {i.Name}")));
                         
+                        // Save the completed order to Redis
+                        await _redisService.SaveOrderAsync(order);
+                        
                         await _slack.Chat.PostMessage(new Message
                         {
                             Channel = messageEvent.Channel,
                             Text = summary
                         });
                     }
-                }
-
-                // Save all orders back to Redis
-                foreach (var updatedOrder in orders)
-                {
-                    await _redisService.SaveOrderAsync(updatedOrder);
                 }
                 return;
             }
@@ -137,13 +136,16 @@ public class QuantityHandler : IEventHandler<MessageEvent>
                 orders[existingOrderIndex] = order;
             }
 
-            // Find next item that needs quantity, regardless of category
+            // Find the next item that needs a quantity
             var nextQuantityItem = order.Items.FirstOrDefault(i => i.NeedsQuantity);
             if (nextQuantityItem != null)
             {
-                order.CurrentItemId = nextQuantityItem.Type + "_" + nextQuantityItem.Name;
+                order.CurrentItemId = nextQuantityItem.Type + "_" + nextQuantityItem.Id;
                 Log.Information("Moving to next item {ItemName} in order {OrderId}", 
                     nextQuantityItem.Name, order.OrderId);
+                
+                // Save the updated order to Redis
+                await _redisService.SaveOrderAsync(order);
                 
                 await _slack.Chat.PostMessage(new Message
                 {
@@ -159,17 +161,14 @@ public class QuantityHandler : IEventHandler<MessageEvent>
                 Log.Information("Order {OrderId} completed with items: {Items}", 
                     order.OrderId, string.Join(", ", order.Items.Select(i => $"{i.Quantity}x {i.Name}")));
                 
+                // Save the completed order to Redis
+                await _redisService.SaveOrderAsync(order);
+                
                 await _slack.Chat.PostMessage(new Message
                 {
                     Channel = messageEvent.Channel,
                     Text = summary
                 });
-            }
-
-            // Save all orders back to Redis
-            foreach (var updatedOrder in orders)
-            {
-                await _redisService.SaveOrderAsync(updatedOrder);
             }
         }
         catch (Exception ex)

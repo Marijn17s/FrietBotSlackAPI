@@ -1,6 +1,5 @@
 using SlackNet;
 using SlackNet.Events;
-using SlackNet.WebApi;
 using SlackNet.Blocks;
 using Serilog;
 using FrietBot.Services;
