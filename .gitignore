@@ -56,6 +56,7 @@ $RECYCLE.BIN/
 .directory
 
 ## Local configuration files (if any) ##
+appsettings.json
 # appsettings.Development.json
 
 ## Log Files ##
