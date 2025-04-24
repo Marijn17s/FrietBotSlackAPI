@@ -25,10 +25,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowWebsite", policy =>
     {
         policy.WithOrigins(
-                "https://v0-friet-order-website.vercel.app",
-                "https://v0-friet-order-website-9gwq1mi0l-marijn-frostupcoms-projects.vercel.app/",
-                "https://*.vercel.app",
-                "https://*.lite.vusercontent.net",
+                OrderConfig.OrderingLink,
                 "http://localhost:3000",
                 "http://localhost:5173"
             )
