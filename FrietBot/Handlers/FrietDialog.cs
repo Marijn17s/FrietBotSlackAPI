@@ -16,7 +16,7 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
     private readonly IMenuService _menuService;
     private readonly IOrderStatusService _orderStatusService;
 
-    public FrietDialog(ISlackApiClient slack, IRedisService redisService, IMenuService menuService, ILogger<FrietDialog> logger, IOrderStatusService orderStatusService)
+    public FrietDialog(ISlackApiClient slack, IRedisService redisService, IMenuService menuService, IOrderStatusService orderStatusService)
     {
         _slack = slack;
         _redisService = redisService;

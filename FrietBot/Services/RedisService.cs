@@ -17,7 +17,7 @@ public class RedisService : IRedisService
     private readonly IConnectionMultiplexer _redis;
     private const string OrdersKey = "friet_orders";
 
-    public RedisService(IConnectionMultiplexer redis, ILogger<RedisService> logger)
+    public RedisService(IConnectionMultiplexer redis)
     {
         _redis = redis;
     }
