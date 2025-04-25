@@ -7,7 +7,7 @@ public static class OrderConfig
     public const int OrderHour = 11;
     public const int OrderMinute = 00;
 
-    public const string OrderingLink = "http://localhost:3000"; // TODO live domein
+    public const string OrderingLink = "https://marijn17s.github.io"; // http://localhost:3000 for development
     
     // Job timing offsets from base time
     public static class Offsets
