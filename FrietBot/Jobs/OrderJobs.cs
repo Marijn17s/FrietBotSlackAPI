@@ -62,12 +62,10 @@ public class ClearOrdersJob : IJob
 
 public class CloseOrdersJob : IJob
 {
-    private IOrderStatusService _orderStatusService;
     private ISlackService _slackService;
 
-    public CloseOrdersJob(IOrderStatusService orderStatusService, ISlackService slackService)
+    public CloseOrdersJob(ISlackService slackService)
     {
-        _orderStatusService = orderStatusService;
         _slackService = slackService;
     }
 
@@ -76,11 +74,6 @@ public class CloseOrdersJob : IJob
         Log.Information($"Executing close orders job at: {DateTime.Now}");
         await _slackService.SendTotalOrderMessage();
         Log.Information("Orders are now closed for the week");
-    }
-
-    public void SetOrderStatusService(IOrderStatusService orderStatusService)
-    {
-        _orderStatusService = orderStatusService;
     }
 
     public void SetSlackService(ISlackService slackService)
@@ -98,11 +91,15 @@ public class ResetCycleJob : IJob
         _orderStatusService = orderStatusService;
     }
 
-    public async Task Execute(IJobExecutionContext context)
+    public Task Execute(IJobExecutionContext context)
     {
         Log.Information($"Executing reset cycle job at: {DateTime.Now}");
         _orderStatusService.ResetCycle();
-        Log.Information("Cycle reset for next week");
+
+        var nextOpening = _orderStatusService.GetOrderStatus().NextOpening;
+        Log.Information($"Cycle reset for {nextOpening}");
+        
+        return Task.CompletedTask;
     }
 
     public void SetOrderStatusService(IOrderStatusService orderStatusService)
@@ -197,37 +194,37 @@ public class SlackService : ISlackService
         }
 
         // Group orders by type
-        var frietOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "friet"))
+        var frietOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "friet"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var snacksOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "snacks"))
+        var snacksOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "snacks"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var burgerOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "burgers"))
+        var burgerOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "burgers"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var broodjesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "broodjes"))
+        var broodjesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "broodjes"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var veggieSnacksOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "veggie_snacks"))
+        var veggieSnacksOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "veggie_snacks"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var schotelsMetSaladesEnFritesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "schotels_met_salades_en_frites"))
+        var schotelsMetSaladesEnFritesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "schotels_met_salades_en_frites"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var schotelsMetSaladesZonderFritesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "schotels_met_salades_zonder_frites"))
+        var schotelsMetSaladesZonderFritesOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "schotels_met_salades_zonder_frites"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var diversenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "diversen"))
+        var diversenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "diversen"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var drankenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "dranken"))
+        var drankenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "dranken"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var warmeDrankenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "warme_dranken"))
+        var warmeDrankenOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "warme_dranken"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
-        var extraOrders = orders.SelectMany(o => o.Items.Where(i => i.Type == "extras"))
+        var extraOrders = orders.SelectMany(o => o.Items.Where(i => i.Type is "extras"))
             .GroupBy(i => i.Id)
             .Select(g => $"• {g.Sum(i => i.Quantity)}x {g.First().Name}").ToList();
 
@@ -342,7 +339,7 @@ public class SchedulerService
 {
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly IServiceProvider _serviceProvider;
-    private IScheduler _scheduler;
+    private IScheduler? _scheduler;
 
     public SchedulerService(ISchedulerFactory schedulerFactory, IServiceProvider serviceProvider)
     {
@@ -379,7 +376,7 @@ public class SchedulerService
 
         // Get the next fire time of the base trigger
         var nextFireTime = await _scheduler.GetTrigger(baseTrigger.Key);
-        var baseTime = nextFireTime.GetNextFireTimeUtc()?.UtcDateTime ?? throw new InvalidOperationException("Could not determine next fire time");
+        var baseTime = nextFireTime?.GetNextFireTimeUtc()?.UtcDateTime ?? throw new InvalidOperationException("Could not determine next fire time");
 
         // Set up the close orders job (base + configured offset)
         var closeOrdersJobDataMap = new JobDataMap();
@@ -476,24 +473,36 @@ public class JobFactory : IJobFactory
         if (_serviceProvider.GetService(jobType) is not IJob job)
             throw new SchedulerException($"Failed to create job of type {jobType}");
 
-        // Inject dependencies from job data map
-        if (job is OrderJob orderJob)
+        // Inject dependencies using pattern matching and null checking
+        switch (job)
         {
-            orderJob.SetSlackService(jobDataMap.Get("SlackService") as ISlackService);
-        }
-        else if (job is CloseOrdersJob closeOrdersJob)
-        {
-            closeOrdersJob.SetOrderStatusService(jobDataMap.Get("OrderStatusService") as IOrderStatusService);
-            closeOrdersJob.SetSlackService(jobDataMap.Get("SlackService") as ISlackService);
-        }
-        else if (job is ResetCycleJob resetCycleJob)
-        {
-            resetCycleJob.SetOrderStatusService(jobDataMap.Get("OrderStatusService") as IOrderStatusService);
-        }
-        else if (job is ClearOrdersJob clearOrdersJob)
-        {
-            clearOrdersJob.SetOrderStatusService(jobDataMap.Get("OrderStatusService") as IOrderStatusService);
-            clearOrdersJob.SetRedisService(jobDataMap.Get("RedisService") as IRedisService);
+            case OrderJob orderJob:
+                if (jobDataMap.Get("SlackService") is not ISlackService slackService)
+                    throw new SchedulerException("SlackService not found in JobDataMap for OrderJob");
+                orderJob.SetSlackService(slackService);
+                break;
+                
+            case CloseOrdersJob closeOrdersJob:
+                if (jobDataMap.Get("SlackService") is not ISlackService closeOrdersSlackService)
+                    throw new SchedulerException("SlackService not found in JobDataMap for CloseOrdersJob");
+                closeOrdersJob.SetSlackService(closeOrdersSlackService);
+                break;
+                
+            case ResetCycleJob resetCycleJob:
+                if (jobDataMap.Get("OrderStatusService") is not IOrderStatusService orderStatusService)
+                    throw new SchedulerException("OrderStatusService not found in JobDataMap for ResetCycleJob");
+                resetCycleJob.SetOrderStatusService(orderStatusService);
+                break;
+                
+            case ClearOrdersJob clearOrdersJob:
+                if (jobDataMap.Get("OrderStatusService") is not IOrderStatusService clearOrderStatusService)
+                    throw new SchedulerException("OrderStatusService not found in JobDataMap for ClearOrdersJob");
+                clearOrdersJob.SetOrderStatusService(clearOrderStatusService);
+
+                if (jobDataMap.Get("RedisService") is not IRedisService redisService)
+                    throw new SchedulerException("RedisService not found in JobDataMap for ClearOrdersJob");
+                clearOrdersJob.SetRedisService(redisService);
+                break;
         }
 
         return job;

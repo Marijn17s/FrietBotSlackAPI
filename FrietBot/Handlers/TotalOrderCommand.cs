@@ -1,4 +1,3 @@
-using SlackNet;
 using SlackNet.Blocks;
 using SlackNet.Interaction;
 using SlackNet.WebApi;
@@ -9,12 +8,10 @@ namespace FrietBot.Handlers;
 
 public class TotalOrderCommand : ISlashCommandHandler
 {
-    private readonly ISlackApiClient _slack;
     private readonly IRedisService _redisService;
 
-    public TotalOrderCommand(ISlackApiClient slack, IRedisService redisService)
+    public TotalOrderCommand(IRedisService redisService)
     {
-        _slack = slack;
         _redisService = redisService;
     }
 
@@ -54,7 +51,7 @@ public class TotalOrderCommand : ISlashCommandHandler
             var groupedOrders = orders
                 .SelectMany(o => o.Items)
                 .GroupBy(i => new { i.Type, i.Name })
-                .Select(g => new { Type = g.Key.Type, Name = g.Key.Name, Quantity = g.Sum(i => i.Quantity) })
+                .Select(g => new { g.Key.Type, g.Key.Name, Quantity = g.Sum(i => i.Quantity) })
                 .GroupBy(i => i.Type)
                 .OrderBy(g => g.Key);
 
@@ -68,6 +65,7 @@ public class TotalOrderCommand : ISlashCommandHandler
             };
 
             // Add each category and its items
+            var totalItems = 0;
             foreach (var category in groupedOrders)
             {
                 var categoryName = category.Key switch
@@ -97,11 +95,11 @@ public class TotalOrderCommand : ISlashCommandHandler
                     {
                         Text = new Markdown($"*{categoryName}:*\n{string.Join("\n", items)}")
                     });
+                    totalItems += category.Sum(i => i.Quantity);
                 }
             }
 
             // Add total count
-            var totalItems = groupedOrders.Sum(g => g.Sum(i => i.Quantity));
             blocks.Add(new SectionBlock
             {
                 Text = new Markdown($"\n*Totaal aantal items:* {totalItems}")

@@ -18,7 +18,7 @@ public class FrietNotification : IEventHandler<MessageEvent>
 
     public async Task Handle(MessageEvent eventMessage)
     {
-        if (eventMessage.Text?.ToLower().Contains("ping") == true)
+        if (eventMessage.Text?.ToLower().Contains("ping") is true)
         {
             var orders = await _redisService.GetOrdersAsync();
             

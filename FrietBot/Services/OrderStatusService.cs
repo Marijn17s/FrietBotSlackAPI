@@ -95,7 +95,7 @@ public class OrderStatusService : IOrderStatusService
         }
 
         // If it's the order day and past the order time, ordering is open
-        if (currentDayOfWeek == OrderConfig.OrderDay && currentTime >= orderTime)
+        if (currentDayOfWeek is OrderConfig.OrderDay && currentTime >= orderTime)
         {
             return (true, null, todayDeadlineUtc);
         }
@@ -104,7 +104,7 @@ public class OrderStatusService : IOrderStatusService
         var daysUntilNextOrder = ((int)OrderConfig.OrderDay - (int)currentDayOfWeek + 7) % 7;
         DateTime nextOpeningAmsterdam;
         
-        if (daysUntilNextOrder == 0 && currentTime < orderTime)
+        if (daysUntilNextOrder is 0 && currentTime < orderTime)
         {
             // Today is the order day but it's not open yet
             nextOpeningAmsterdam = today.Add(orderTime);
@@ -132,7 +132,7 @@ public class OrderStatusService : IOrderStatusService
 
         // Calculate days until next Wednesday
         var daysToNextOrder = ((int)OrderConfig.OrderDay - (int)currentDayOfWeek + 7) % 7;
-        if (daysToNextOrder == 0)
+        if (daysToNextOrder is 0)
         {
             // If today is Wednesday, add 7 days to get to next Wednesday
             daysToNextOrder = 7;

@@ -26,9 +26,8 @@ namespace FrietBot.Jobs
                 scheduler.Context.TryAdd($"{jobType.FullName}-scope", scope);
                 
                 // Get the job from the scope
-                var job = scope.ServiceProvider.GetRequiredService(jobType) as IJob;
-                
-                if (job == null)
+
+                if (scope.ServiceProvider.GetRequiredService(jobType) is not IJob job)
                 {
                     throw new SchedulerException(
                         $"Failed to instantiate job '{jobType.Name}': Service provider returned null");

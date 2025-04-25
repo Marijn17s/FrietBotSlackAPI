@@ -49,11 +49,11 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
             return;
         }
 
-        if (action.ActionId == "open_friet_dialog")
+        if (action.ActionId is "open_friet_dialog")
         {
             await HandleOpenDialog(request);
         }
-        else if (action.ActionId == "confirm_order")
+        else if (action.ActionId is "confirm_order")
         {
             await HandleConfirmOrder(request, action.Value);
         }
@@ -232,7 +232,7 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
             var orderId = action.Value;
             var orders = await _redisService.GetOrdersAsync();
             var order = orders.FirstOrDefault(o => o.OrderId.ToString() == orderId);
-            if (order == null)
+            if (order is null)
             {
                 Log.Error($"Order {orderId} not found");
                 await _slack.Chat.PostEphemeral(request.Channel.Id, new Message
@@ -250,14 +250,14 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
 
             // Find and update the item
             var item = order.Items.FirstOrDefault(i => i.Type == itemType && i.Name == itemName);
-            if (item == null) return;
+            if (item is null) return;
 
             // Update quantity based on action
-            if (actionType == "increment")
+            if (actionType is "increment")
             {
                 item.Quantity = Math.Min(item.Quantity + 1, 10); // Max 10
             }
-            else if (actionType == "decrement")
+            else if (actionType is "decrement")
             {
                 item.Quantity = Math.Max(item.Quantity - 1, 1); // Min 1
             }
@@ -347,7 +347,7 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
             var orders = await _redisService.GetOrdersAsync();
             var order = orders.FirstOrDefault(o => o.OrderId == orderId);
 
-            if (order == null)
+            if (order is null)
             {
                 await _slack.Chat.PostEphemeral(request.User.Id, new Message
                 {
@@ -415,15 +415,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
             order.Items.Clear();
 
             // Add selected items with initial quantity of 1
-            if (frietSelections?.SelectedOptions != null)
+            if (frietSelections?.SelectedOptions is not null)
             {
                 foreach (var option in frietSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("friet", option.Value);
-                    if (menuItem != null)
+                    const string type = "friet";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "friet", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -433,15 +434,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (snacksSelections?.SelectedOptions != null)
+            if (snacksSelections?.SelectedOptions is not null)
             {
                 foreach (var option in snacksSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("snacks", option.Value);
-                    if (menuItem != null)
+                    const string type = "snacks";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "snacks", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -451,15 +453,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (burgersSelections?.SelectedOptions != null)
+            if (burgersSelections?.SelectedOptions is not null)
             {
                 foreach (var option in burgersSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("burgers", option.Value);
-                    if (menuItem != null)
+                    const string type = "burgers";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "burgers", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -469,15 +472,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (broodjesSelections?.SelectedOptions != null)
+            if (broodjesSelections?.SelectedOptions is not null)
             {
                 foreach (var option in broodjesSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("broodjes", option.Value);
-                    if (menuItem != null)
+                    const string type = "broodjes";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "broodjes", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -487,15 +491,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (veggieSnacksSelections?.SelectedOptions != null)
+            if (veggieSnacksSelections?.SelectedOptions is not null)
             {
                 foreach (var option in veggieSnacksSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("veggie_snacks", option.Value);
-                    if (menuItem != null)
+                    const string type = "veggie_snacks";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "veggie_snacks", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -505,15 +510,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (schotelsMetSaladesEnFritesSelections?.SelectedOptions != null)
+            if (schotelsMetSaladesEnFritesSelections?.SelectedOptions is not null)
             {
                 foreach (var option in schotelsMetSaladesEnFritesSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("schotels_met_salades_en_frites", option.Value);
-                    if (menuItem != null)
+                    const string type = "schotels_met_salades_en_frites";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "schotels_met_salades_en_frites", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -523,15 +529,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (schotelsMetSaladesZonderFritesSelections?.SelectedOptions != null)
+            if (schotelsMetSaladesZonderFritesSelections?.SelectedOptions is not null)
             {
                 foreach (var option in schotelsMetSaladesZonderFritesSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("schotels_met_salades_zonder_frites", option.Value);
-                    if (menuItem != null)
+                    const string type = "schotels_met_salades_zonder_frites";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "schotels_met_salades_zonder_frites", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -541,15 +548,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (diversenSelections?.SelectedOptions != null)
+            if (diversenSelections?.SelectedOptions is not null)
             {
                 foreach (var option in diversenSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("diversen", option.Value);
-                    if (menuItem != null)
+                    const string type = "diversen";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "diversen", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -559,15 +567,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (drankenSelections?.SelectedOptions != null)
+            if (drankenSelections?.SelectedOptions is not null)
             {
                 foreach (var option in drankenSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("dranken", option.Value);
-                    if (menuItem != null)
+                    const string type = "dranken";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "dranken", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -577,15 +586,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (warmeDrankenSelections?.SelectedOptions != null)
+            if (warmeDrankenSelections?.SelectedOptions is not null)
             {
                 foreach (var option in warmeDrankenSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("warme_dranken", option.Value);
-                    if (menuItem != null)
+                    const string type = "warme_dranken";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "warme_dranken", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 
@@ -595,15 +605,16 @@ public class FrietDialog : IBlockActionHandler<ButtonAction>, IViewSubmissionHan
                 }
             }
 
-            if (extrasSelections?.SelectedOptions != null)
+            if (extrasSelections?.SelectedOptions is not null)
             {
                 foreach (var option in extrasSelections.SelectedOptions)
                 {
-                    var menuItem = _menuService.GetMenuItem("extras", option.Value);
-                    if (menuItem != null)
+                    const string type = "extras";
+                    var menuItem = _menuService.GetMenuItem(type, option.Value);
+                    if (menuItem is not null)
                     {
-                        order.Items.Add(new OrderItem { 
-                            Type = "extras", 
+                        order.Items.Add(new OrderItem {
+                            Type = type, 
                             Id = menuItem.Id,
                             Name = menuItem.Name,
                             Quantity = 1, 

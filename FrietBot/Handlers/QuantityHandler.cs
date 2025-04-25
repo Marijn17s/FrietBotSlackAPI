@@ -26,9 +26,9 @@ public class QuantityHandler : IEventHandler<MessageEvent>
 
             // Get the user's orders
             var orders = await _redisService.GetOrdersAsync();
-            var order = orders.FirstOrDefault(o => o.UserId == messageEvent.User && o.CurrentItemId != null);
+            var order = orders.FirstOrDefault(o => o.UserId == messageEvent.User && o.CurrentItemId is not null);
             
-            if (order == null)
+            if (order is null)
             {
                 Log.Information("No active order found for user {UserId}", messageEvent.User);
                 return;
@@ -36,7 +36,7 @@ public class QuantityHandler : IEventHandler<MessageEvent>
 
             // Find the current item
             var currentItem = order.Items.FirstOrDefault(i => i.Type + "_" + i.Id == order.CurrentItemId);
-            if (currentItem == null)
+            if (currentItem is null)
             {
                 Log.Warning("Current item {CurrentItemId} not found in order {OrderId}", order.CurrentItemId, order.OrderId);
                 await _slack.Chat.PostMessage(new Message
@@ -48,7 +48,7 @@ public class QuantityHandler : IEventHandler<MessageEvent>
             }
 
             // Handle special cases for removing items
-            if (messageEvent.Text == "0" || messageEvent.Text == "-")
+            if (messageEvent.Text is "0" || messageEvent.Text is "-")
             {
                 // Remove the current item from the order
                 order.Items.Remove(currentItem);
@@ -56,7 +56,7 @@ public class QuantityHandler : IEventHandler<MessageEvent>
 
                 // Update the order in the orders list
                 var orderIndex = orders.FindIndex(o => o.OrderId == order.OrderId);
-                if (orderIndex != -1)
+                if (orderIndex is not -1)
                 {
                     orders[orderIndex] = order;
                 }
@@ -76,7 +76,7 @@ public class QuantityHandler : IEventHandler<MessageEvent>
                 {
                     // Find next item that needs quantity, regardless of category
                     var nextItem = order.Items.FirstOrDefault(i => i.NeedsQuantity);
-                    if (nextItem != null)
+                    if (nextItem is not null)
                     {
                         order.CurrentItemId = nextItem.Type + "_" + nextItem.Id;
                         Log.Information("Moving to next item {ItemName} in order {OrderId}", 
@@ -131,14 +131,14 @@ public class QuantityHandler : IEventHandler<MessageEvent>
 
             // Update the order in the orders list
             var existingOrderIndex = orders.FindIndex(o => o.OrderId == order.OrderId);
-            if (existingOrderIndex != -1)
+            if (existingOrderIndex is not -1)
             {
                 orders[existingOrderIndex] = order;
             }
 
             // Find the next item that needs a quantity
             var nextQuantityItem = order.Items.FirstOrDefault(i => i.NeedsQuantity);
-            if (nextQuantityItem != null)
+            if (nextQuantityItem is not null)
             {
                 order.CurrentItemId = nextQuantityItem.Type + "_" + nextQuantityItem.Id;
                 Log.Information("Moving to next item {ItemName} in order {OrderId}", 

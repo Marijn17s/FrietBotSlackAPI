@@ -86,7 +86,7 @@ public class HomeTabHandler : IEventHandler<AppHomeOpened>
 
             foreach (var pair in categoryPairs)
             {
-                if (pair.Count == 1)
+                if (pair.Count is 1)
                 {
                     // Single category
                     var category = pair[0];
@@ -103,17 +103,12 @@ public class HomeTabHandler : IEventHandler<AppHomeOpened>
                 }
                 else
                 {
-                    // Two categories side by side
-                    var leftCategory = pair[0];
-                    var rightCategory = pair[1];
+                    var category = pair[0];
+                    var itemsText = string.Join("\n", category.Value.Select(item => $"• {item.Name}"));
                     
-                    var leftItemsText = string.Join("\n", leftCategory.Value.Select(item => $"• {item.Name}"));
-                    var rightItemsText = string.Join("\n", rightCategory.Value.Select(item => $"• {item.Name}"));
-
-                    // Create a section block with the left category as main text and right category as accessory
                     blocks.Add(new SectionBlock
                     {
-                        Text = new Markdown($"*{GetCategoryEmoji(leftCategory.Key)} {leftCategory.Key}*\n{leftItemsText}"),
+                        Text = new Markdown($"*{GetCategoryEmoji(category.Key)} {category.Key}*\n{itemsText}"),
                         Accessory = new Button
                         {
                             Text = new PlainText("Bestel nu"),

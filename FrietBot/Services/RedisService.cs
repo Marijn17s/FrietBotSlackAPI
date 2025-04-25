@@ -31,10 +31,8 @@ public class RedisService : IRedisService
             
             // Find and update the existing order if it exists
             var existingOrder = existingOrders.FirstOrDefault(o => o.OrderId == order.OrderId);
-            if (existingOrder != null)
-            {
+            if (existingOrder is not null)
                 existingOrders.Remove(existingOrder);
-            }
             
             existingOrders.Add(order);
             

@@ -190,10 +190,8 @@ app.MapGet("/api/orders/{userId}", async (string userId, IRedisService redisServ
         var orders = await redisService.GetOrdersAsync();
         var userOrder = orders.FirstOrDefault(o => o.UserId == userId);
         
-        if (userOrder == null)
-        {
+        if (userOrder is null)
             return Results.NotFound($"No order found for user {userId}");
-        }
         
         return Results.Ok(userOrder);
     }
@@ -251,7 +249,7 @@ app.MapDelete("/api/orders/{userId}", async (string userId, IRedisService redisS
         var orders = await redisService.GetOrdersAsync();
         var userOrder = orders.FirstOrDefault(o => o.UserId == userId);
         
-        if (userOrder == null)
+        if (userOrder is null)
         {
             return Results.NotFound($"No order found for user {userId}");
         }
