@@ -7,12 +7,33 @@ public interface IOrderStatusService
 {
     (bool IsOpen, DateTime? NextOpening, DateTime? Deadline) GetOrderStatus();
     void ResetCycle();
+    bool ManuallyReopenOrdering();
+    void CloseOrdering();
 }
 
 public class OrderStatusService : IOrderStatusService
 {
     private readonly TimeZoneInfo _amsterdamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
     private DateTime? _nextCycleStart;
+    private DateTime? _manualReopenEnd;
+
+    public bool ManuallyReopenOrdering()
+    {
+        // Get current time in Amsterdam
+        var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _amsterdamTimeZone);
+        
+        // Set the manual reopen end time to 30 minutes from now
+        _manualReopenEnd = TimeZoneInfo.ConvertTimeToUtc(now.AddMinutes(30), _amsterdamTimeZone);
+        
+        Log.Information("Ordering manually reopened until {EndTime}", _manualReopenEnd);
+        return true;
+    }
+
+    public void CloseOrdering()
+    {
+        _manualReopenEnd = null;
+        Log.Information("Ordering closed");
+    }
 
     public (bool IsOpen, DateTime? NextOpening, DateTime? Deadline) GetOrderStatus()
     {
@@ -26,6 +47,23 @@ public class OrderStatusService : IOrderStatusService
             OrderConfig.OrderHour + OrderConfig.Offsets.CloseOrdersHours,
             OrderConfig.OrderMinute + OrderConfig.Offsets.CloseOrdersMinutes,
             0);
+
+        // Check if we're in a manual reopen window
+        if (_manualReopenEnd.HasValue)
+        {
+            var manualReopenEndAmsterdam = TimeZoneInfo.ConvertTimeFromUtc(_manualReopenEnd.Value, _amsterdamTimeZone);
+            
+            // If we're past the manual reopen end time, clear it
+            if (now >= manualReopenEndAmsterdam)
+            {
+                _manualReopenEnd = null;
+            }
+            else
+            {
+                // If we're in the manual reopen window, ordering is open
+                return (true, _nextCycleStart, _manualReopenEnd);
+            }
+        }
 
         // If we have a stored next cycle start, use that
         if (_nextCycleStart.HasValue)

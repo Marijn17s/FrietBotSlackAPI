@@ -33,22 +33,30 @@ public class OrderJob : IJob
 public class ClearOrdersJob : IJob
 {
     private IRedisService _redisService;
+    private IOrderStatusService _orderStatusService;
 
-    public ClearOrdersJob(IRedisService redisService)
+    public ClearOrdersJob(IRedisService redisService, IOrderStatusService orderStatusService)
     {
         _redisService = redisService;
+        _orderStatusService = orderStatusService;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
         Log.Information($"Executing clear orders job at: {DateTime.Now}");
         await _redisService.ClearOrdersAsync();
-        Log.Information("All orders cleared from Redis");
+        _orderStatusService.CloseOrdering();
+        Log.Information("All orders cleared from Redis and ordering closed");
     }
 
     public void SetRedisService(IRedisService redisService)
     {
         _redisService = redisService;
+    }
+
+    public void SetOrderStatusService(IOrderStatusService orderStatusService)
+    {
+        _orderStatusService = orderStatusService;
     }
 }
 
@@ -465,11 +473,8 @@ public class JobFactory : IJobFactory
         var jobDataMap = bundle.JobDetail.JobDataMap;
 
         // Create the job instance
-        var job = _serviceProvider.GetService(jobType) as IJob;
-        if (job == null)
-        {
+        if (_serviceProvider.GetService(jobType) is not IJob job)
             throw new SchedulerException($"Failed to create job of type {jobType}");
-        }
 
         // Inject dependencies from job data map
         if (job is OrderJob orderJob)
@@ -487,6 +492,7 @@ public class JobFactory : IJobFactory
         }
         else if (job is ClearOrdersJob clearOrdersJob)
         {
+            clearOrdersJob.SetOrderStatusService(jobDataMap.Get("OrderStatusService") as IOrderStatusService);
             clearOrdersJob.SetRedisService(jobDataMap.Get("RedisService") as IRedisService);
         }
 

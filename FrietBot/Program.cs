@@ -4,6 +4,7 @@ using FrietBot.Handlers;
 using FrietBot.Jobs;
 using FrietBot.Models;
 using FrietBot.Services;
+using Microsoft.AspNetCore.Mvc;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
@@ -214,6 +215,35 @@ app.MapGet("/api/order/status", (IOrderStatusService orderStatusService) =>
     });
 });
 
+app.MapPost("/api/order/reopen", (IOrderStatusService orderStatusService, IConfiguration configuration, [FromHeader(Name = "X-Admin-Password")] string? password) =>
+{
+    var isOpen = orderStatusService.GetOrderStatus().IsOpen;
+    if (isOpen)
+        return Results.BadRequest(new { message = $"Ordering is already open until {orderStatusService.GetOrderStatus().Deadline}" });
+
+    // Get current time in Amsterdam timezone
+    var amsterdamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
+    var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, amsterdamTimeZone);
+    
+    // Calculate reset time for today
+    var resetTime = now.Date.Add(new TimeSpan(
+        OrderConfig.OrderHour + OrderConfig.Offsets.ClearOrdersHours,
+        OrderConfig.OrderMinute + OrderConfig.Offsets.ClearOrdersMinutes,
+        0));
+    
+    // Check if we're within 1 hour of the reset time
+    if (Math.Abs((now - resetTime).TotalHours) < 1)
+        return Results.BadRequest(new { message = "Cannot reopen ordering within 1 hour of the reset time" });
+    
+    var adminPassword = configuration.GetValue<string>("Admin:Password");
+    if (string.IsNullOrEmpty(password) || password != adminPassword)
+        return Results.Unauthorized();
+
+    var result = orderStatusService.ManuallyReopenOrdering();
+    return result ? Results.Ok(new { message = $"Ordering reopened successfully. Open until {orderStatusService.GetOrderStatus().Deadline}"}) 
+                 : Results.BadRequest(new { message = "Could not reopen ordering" });
+});
+
 app.MapDelete("/api/orders/{userId}", async (string userId, IRedisService redisService) =>
 {
     try
@@ -279,11 +309,11 @@ app.MapGet("/redis", async (IRedisService redisService) =>
     }
 });
 
-app.MapGet("/redis/connection", async (IConnectionMultiplexer redis) =>
+app.MapGet("/redis/connection", async (IConnectionMultiplexer redisService) =>
 {
     try
     {
-        var db = redis.GetDatabase();
+        var db = redisService.GetDatabase();
         await db.PingAsync();
         return Results.Ok("Redis connection successful");
     }
@@ -294,13 +324,13 @@ app.MapGet("/redis/connection", async (IConnectionMultiplexer redis) =>
 });
 
 // Clear Redis on startup
-app.Lifetime.ApplicationStarted.Register(async () =>
+app.Lifetime.ApplicationStarted.Register(async void () =>
 {
     try
     {
-        var redis = app.Services.GetRequiredService<IConnectionMultiplexer>();
-        var server = redis.GetServer(redis.GetEndPoints().First());
-        await server.FlushDatabaseAsync();
+        var redisService = app.Services.GetRequiredService<IConnectionMultiplexer>();
+        var server = redisService.GetEndPoints().First();
+        await redisService.GetServer(server).FlushDatabaseAsync();
         Console.WriteLine("Redis database cleared on startup");
     }
     catch (Exception ex)
@@ -314,5 +344,5 @@ app.Run();
 public class RedisConfig
 {
     public string ConnectionString { get; set; } = "localhost:6379";
-    public int Database { get; set; } = 0;
+    public int Database { get; set; }
 }
